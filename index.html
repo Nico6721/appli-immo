@@ -66,6 +66,16 @@ button.ghost{background:transparent;color:var(--accent);border:1px solid var(--a
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:10px;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.on{opacity:1}
 .hide{display:none}
+.hcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.hcard.cur{border:2px solid var(--accent)}
+.hcard h3{margin:0;font-size:1rem}
+.hcard .meta{color:var(--soft);font-size:.8rem;margin:2px 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:.85rem}
+.chip.pos{color:var(--ok)}.chip.neg{color:var(--bad)}.chip.miss{color:var(--miss)}
+.hbtn{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hbtn button{padding:10px}
+button.danger{background:transparent;color:var(--bad);border:1px solid var(--bad)}
 .cards{display:grid;grid-template-columns:1fr;gap:10px}
 @media (min-width:560px){.cards{grid-template-columns:1fr 1fr}}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
@@ -86,7 +96,7 @@ button.ghost{background:transparent;color:var(--accent);border:1px solid var(--a
 .cc.ok{color:var(--ok)}
 .cat .item{margin:0 8px 6px}
 @media (prefers-reduced-motion:reduce){.cat summary::before{transition:none}}
-.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--paper);padding:8px 0;margin:0 0 16px;border-bottom:1px solid var(--line)}
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;background:var(--paper);padding:8px 0;margin:0 0 16px;border-bottom:1px solid var(--line)}
 .tabs button{background:var(--card);color:var(--soft);border:1px solid var(--line)}
 .tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .upl{display:block;text-align:center;margin-top:8px;padding:13px 16px;border:1px solid var(--accent);color:var(--accent);border-radius:10px;font-weight:700;cursor:pointer}
@@ -115,6 +125,7 @@ details .grid{margin-top:10px}
   <nav class="tabs" role="tablist">
     <button role="tab" id="t-q" aria-selected="true" data-tab="q">Questions</button>
     <button role="tab" id="t-a" aria-selected="false" data-tab="a">Analyse</button>
+    <button role="tab" id="t-h" aria-selected="false" data-tab="h">Historique</button>
   </nav>
   <div id="tab-q" class="tab">
   <section>
@@ -203,6 +214,13 @@ details .grid{margin-top:10px}
   <section>
     <h2><span class="n">3</span>Comparatif des montages</h2>
     <div id="cmp"><p class="summary">Renseignez au moins le prix et le loyer.</p></div>
+  </section>
+  </div>
+  <div id="tab-h" class="tab hide">
+  <section>
+    <h2>Annonces analysées</h2>
+    <p class="note" style="margin:0 0 10px">Enregistrées automatiquement sur ce téléphone dès qu'un prix, une référence ou un texte d'annonce est saisi.</p>
+    <div id="hist"></div>
   </section>
   </div>
 </main>
@@ -381,11 +399,12 @@ function simulate(kind,h){
     const cash=cum+sale-crd-isPV,distrib=profit+pv-isPV,pfu=Math.max(0,distrib)*0.314;taxPV=isPV+pfu;net=cash-pfu;}
   return{m:S.m,tax1,cf1,cum,taxPV,enrich:net-h.apport,regime,taxTot};
 }
+function hyp(){const loyer=N("loyer");return{prix:N("prix"),loyer,loyerNu:N("loyerNu")??Math.round((loyer||0)*0.88),trav:N("travaux")||0,mob:N("mobilier")||0,tf:N("tf")??0,charges:N("charges")??0,
+    apport:N("apport")??25000,taux:N("taux")??3.55,duree:N("duree")??25,tmi:N("tmi")??11,ps:N("ps")??17.2,reval:N("reval")??1,hz:N("hz")??10,vac:V("vac")!=="Non",plateau:ctx.plateau};}
 function renderCmp(){
   const prix=N("prix"),loyer=N("loyer");
   if(!prix||!loyer){$("cmp").innerHTML='<p class="summary">Renseignez au moins le prix et le loyer.</p>';return;}
-  const h={prix,loyer,loyerNu:N("loyerNu")??Math.round(loyer*0.88),trav:N("travaux")||0,mob:N("mobilier")||0,tf:N("tf")??0,charges:N("charges")??0,
-    apport:N("apport")??25000,taux:N("taux")??3.55,duree:N("duree")??25,tmi:N("tmi")??11,ps:N("ps")??17.2,reval:N("reval")??1,hz:N("hz")??10,vac:V("vac")!=="Non",plateau:ctx.plateau};
+  const h=hyp();
   const sc=[["lmnp","LMNP en propre","Meublé, régime réel"],["sciM","SCI à l'IS, meublé","Société, amortissement"],["nu","Nu en propre","Revenus fonciers"],["sciN","SCI à l'IS, nu","Société, amortissement"]];
   const res=sc.map(([k,t,d])=>({k,t,d,...simulate(k,h)}));const best=Math.max(...res.map(r=>r.enrich));
   const e=v=>(v>=0?"+":"")+fmt(v)+" €",cl=v=>v>=0?"pos":"neg";
@@ -439,12 +458,48 @@ function toast(s){const t=$("toast");t.textContent=s;t.classList.add("on");clear
 async function copy(){try{await navigator.clipboard.writeText($("msg").value);toast("Message copié");}catch(e){$("msg").select();document.execCommand("copy");toast("Message copié");}}
 async function share(){const text=$("msg").value;if(navigator.share){try{await navigator.share({text});}catch(e){}}else if(val("chan")==="mail"){location.href="mailto:?subject="+encodeURIComponent("Votre annonce"+(V("ref")?" réf. "+V("ref"):""))+"&body="+encodeURIComponent(text);}else copy();}
 
-function save(){try{const o={ad:$("ad").value,sign:V("sign"),seller:val("seller"),chan:val("chan"),state};FIELDS.forEach(f=>o[f]=$(f).value);CHECKS.forEach(c=>o[c]=$(c).checked);localStorage.setItem("ck-annonce-v2",JSON.stringify(o));}catch(e){}}
-function load(){try{const s=JSON.parse(localStorage.getItem("ck-annonce-v2")||"null");if(!s)return;$("ad").value=s.ad||"";if(s.sign)$("sign").value=s.sign;
+const HK="ck-hist-v1";let curId=null;
+const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function getHist(){try{return JSON.parse(localStorage.getItem(HK)||"[]");}catch(e){return[];}}
+function setHist(h){try{localStorage.setItem(HK,JSON.stringify(h));}catch(e){}}
+function snap(){const o={ad:$("ad").value,state:{...state},found:{...ctx.found}};FIELDS.filter(f=>!PROFILE.includes(f)).forEach(f=>o[f]=$(f).value);CHECKS.forEach(c=>o[c]=$(c).checked);return o;}
+function upsertHist(){
+  if(!V("prix")&&!V("ref")&&V("ad").length<30)return;
+  if(!curId)curId=newId();
+  const h=getHist(),now=Date.now(),i=h.findIndex(x=>x.id===curId),miss=visible().filter(it=>!ctx.found[it.id]).length;
+  let cf=null,rb=null;const p=hyp();
+  if(p.prix&&p.loyer){cf=simulate("lmnp",p).cf1;rb=p.loyer*12/(p.prix*1.092+p.trav+p.mob)*100;}
+  const title=[V("type")==="Plateau"?"Plateau":V("type"),V("surf")?V("surf")+" m²":"",V("ville")].filter(Boolean).join(" · ")||(V("ref")?"Réf. "+V("ref"):"Annonce sans titre");
+  const e={id:curId,created:i>=0?h[i].created:now,updated:now,title,sum:{prix:N("prix"),loyer:N("loyer"),dpe:V("dpe"),ref:V("ref"),cf,rb,miss},data:snap()};
+  if(i>=0)h.splice(i,1);h.unshift(e);setHist(h);
+  if(!$("tab-h").classList.contains("hide"))renderHist();
+}
+function renderHist(){
+  const h=getHist();
+  if(!h.length){$("hist").innerHTML='<p class="summary">Aucune annonce enregistrée pour l\'instant.</p>';return;}
+  const d=t=>new Date(t).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"});
+  $("hist").innerHTML=h.map(x=>{const m=x.sum,ch=[];
+    if(m.prix)ch.push(`<span class="chip">${fmt(m.prix)} €</span>`);
+    if(m.loyer)ch.push(`<span class="chip">Loyer ${fmt(m.loyer)} €</span>`);
+    ch.push(`<span class="chip${m.dpe==="F"||m.dpe==="G"?" neg":""}">DPE ${m.dpe||"?"}</span>`);
+    if(m.rb!==null)ch.push(`<span class="chip">${m.rb.toFixed(1).replace(".",",")} % brut</span>`);
+    if(m.cf!==null)ch.push(`<span class="chip ${m.cf>=0?"pos":"neg"}">${m.cf>=0?"+":""}${fmt(m.cf)} €/mois</span>`);
+    ch.push(`<span class="chip${m.miss?" miss":" pos"}">${m.miss?m.miss+" manquant"+(m.miss>1?"s":""):"complet"}</span>`);
+    return `<div class="hcard${x.id===curId?" cur":""}"><h3>${x.title.replace(/</g,"&lt;")}</h3><p class="meta">${x.id===curId?"En cours · ":""}mise à jour le ${d(x.updated)}${m.ref?" · réf. "+m.ref.replace(/</g,"&lt;"):""}</p><div class="chips">${ch.join("")}</div>
+      <div class="hbtn"><button data-open="${x.id}">Ouvrir</button><button class="danger" data-del="${x.id}">Supprimer</button></div></div>`;}).join("")+
+    '<p class="note">Cash-flow indiqué : LMNP en propre, année 1, avec les hypothèses de financement actuelles.</p>';
+  $("hist").querySelectorAll("[data-open]").forEach(b=>b.addEventListener("click",()=>openHist(b.dataset.open)));
+  $("hist").querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>delHist(b.dataset.del)));
+}
+function fillForm(o){$("ad").value=o.ad||"";FIELDS.filter(f=>!PROFILE.includes(f)).forEach(f=>$(f).value=o[f]??"");CHECKS.forEach(c=>$(c).checked=!!o[c]);}
+function openHist(id){const x=getHist().find(e=>e.id===id);if(!x)return;curId=id;fillForm(x.data);state={...(x.data.state||{})};ctx={found:{...(x.data.found||{})}};refresh();tab("q");toast("Annonce ouverte");}
+function delHist(id){if(!confirm("Supprimer cette annonce de l'historique ?"))return;setHist(getHist().filter(e=>e.id!==id));if(id===curId)clearForm();renderHist();}
+function clearForm(){curId=null;fillForm({});state={};ctx={};refresh();}
+function save(){upsertHist();try{const o={ad:$("ad").value,sign:V("sign"),seller:val("seller"),chan:val("chan"),state};FIELDS.forEach(f=>o[f]=$(f).value);CHECKS.forEach(c=>o[c]=$(c).checked);o.curId=curId;localStorage.setItem("ck-annonce-v2",JSON.stringify(o));}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem("ck-annonce-v2")||"null");if(!s)return;curId=s.curId||null;if(s.state)state=s.state;$("ad").value=s.ad||"";if(s.sign)$("sign").value=s.sign;
   FIELDS.forEach(f=>{if(s[f]!==undefined)$(f).value=s[f];});CHECKS.forEach(c=>$(c).checked=!!s[c]);
   ["seller","chan"].forEach(n=>{const r=document.querySelector(`input[name="${n}"][value="${s[n]}"]`);if(r)r.checked=true;});}catch(e){}}
-function reset(){if(!confirm("Effacer l'annonce et les caractéristiques ? Votre financement est conservé."))return;
-  $("ad").value="";FIELDS.filter(f=>!PROFILE.includes(f)).forEach(f=>$(f).value="");CHECKS.forEach(c=>$(c).checked=false);state={};ctx={};refresh();window.scrollTo(0,0);}
+function reset(){if(!confirm("Commencer une nouvelle annonce ? L'annonce actuelle reste dans l'historique."))return;clearForm();window.scrollTo(0,0);}
 
 $("copy").addEventListener("click",copy);
 $("share").addEventListener("click",share);
@@ -470,7 +525,7 @@ async function readImages(files){
   finally{lab.style.opacity=1;$("img").value="";}
 }
 $("img").addEventListener("change",e=>readImages([...e.target.files]));
-function tab(t){["q","a"].forEach(k=>{$("tab-"+k).classList.toggle("hide",k!==t);$("t-"+k).setAttribute("aria-selected",k===t);});window.scrollTo(0,0);}
+function tab(t){if(t==="h")renderHist();["q","a","h"].forEach(k=>{$("tab-"+k).classList.toggle("hide",k!==t);$("t-"+k).setAttribute("aria-selected",k===t);});window.scrollTo(0,0);}
 document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>tab(b.dataset.tab)));
 load();refresh();
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
