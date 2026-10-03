@@ -1,6 +1,6 @@
 // Fonctionnement hors connexion : l'application est servie depuis le cache,
 // les ressources externes (police, module de lecture des captures) sont mises en cache au premier usage.
-const V = "annonces-v2";
+const V = "annonces-v3";
 const SHELL = ["./", "index.html", "manifest.json", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(V).then(c => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener("activate", e => {

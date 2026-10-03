@@ -66,6 +66,11 @@ button.ghost{background:transparent;color:var(--accent);border:1px solid var(--a
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:10px;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.on{opacity:1}
 .hide{display:none}
+.conf{background:var(--miss-bg);border-radius:10px;padding:10px 12px;margin-top:10px}
+.conf p{margin:0 0 6px;font-weight:700;color:var(--miss)}
+.conf label{display:flex;gap:8px;align-items:flex-start;margin:4px 0;font-size:.92rem}
+.conf input{width:20px;height:20px;flex:none;accent-color:var(--accent)}
+.conf button{margin-top:6px;width:100%}
 .hcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
 .hcard.cur{border:2px solid var(--accent)}
 .hcard h3{margin:0;font-size:1rem}
@@ -182,7 +187,15 @@ details .grid{margin-top:10px}
       <button id="copy">Copier</button>
       <button class="ghost" id="share">Partager</button>
     </div>
-    <button class="full ghost" id="new" style="margin-top:8px">Nouvelle annonce</button>
+  </section>
+
+  <section>
+    <h2><span class="n">5</span>Réponse du vendeur</h2>
+    <textarea id="rep" placeholder="Collez ici la réponse reçue : les caractéristiques se mettent à jour automatiquement"></textarea>
+    <label class="upl" for="imgRep">📷 Ajouter des captures de la réponse<input type="file" id="imgRep" accept="image/*" multiple></label>
+    <p class="note" id="ocrRep">Les réponses numérotées sont rattachées aux questions du message envoyé.</p>
+    <div id="conf"></div>
+    <button class="full ghost" id="new" style="margin-top:12px">Nouvelle annonce</button>
   </section>
   </div>
   <div id="tab-a" class="tab hide">
@@ -270,29 +283,49 @@ const PROFILE=["apport","taux","duree","rev","cred","tmi","ps","reval","vac","hz
 const V=id=>$(id).value.trim(), N=id=>{const v=parseFloat(V(id).replace(",","."));return isNaN(v)?null:v;};
 
 // Pré-remplissage depuis le texte : ne remplace pas un champ déjà saisi
-function prefill(quiet){
-  const raw=$("ad").value,t=norm(raw);
-  if(t.trim().length<30){refresh();return;}
-  const set=(id,v)=>{if(v!==undefined&&v!==null&&v!==""&&!V(id))$(id).value=v;};
-  const pr=[...t.matchAll(/(\d{1,3}(?:[\s.]\d{3})+|\d{4,7})\s*(€|euros)/g)].map(m=>num(m[1])).filter(v=>v>=20000&&v<=3000000);
-  if(pr.length)set("prix",pr[0]);
-  const su=t.match(/(\d{1,3}(?:[.,]\d{1,2})?)\s*m(?:²|2\b)/);if(su)set("surf",num(su[1]));
+const FLAB={prix:"Prix",surf:"Surface",type:"Type",ville:"Ville",dpe:"Classe DPE",dpedate:"Année du DPE",charges:"Charges copro (€/an)",tf:"Taxe foncière (€/an)",etage:"Étage",asc:"Ascenseur",heat:"Chauffage",occ:"Occupation",loyer:"Loyer HC",worksAG:"Travaux copro",ref:"Référence",cave:"Cave",parking:"Parking",balcon:"Balcon / terrasse"};
+function extractVals(raw){
+  const t=norm(raw),v={};
+  const pr=[...t.matchAll(/(\d{1,3}(?:[\s.]\d{3})+|\d{4,7})\s*(€|euros)/g)].map(m=>num(m[1])).filter(x=>x>=20000&&x<=3000000);if(pr.length)v.prix=pr[0];
+  const su=t.match(/(\d{1,3}(?:[.,]\d{1,2})?)\s*m(?:²|2\b)/);if(su)v.surf=num(su[1]);
   const ty=t.match(/\b(plateau|[àa] transformer|studio|t1|f1|t2|f2|t[3-6]|f[3-6]|maison)\b/);
-  if(ty){const k=ty[1];set("type",/plateau|transformer/.test(k)?"Plateau":/studio|1/.test(k)?"Studio":/2/.test(k)?"T2":k==="maison"?"Maison":"T3 et +");}
-  const vi=raw.match(/\b(haguenau|strasbourg|schiltigheim|bischheim|saverne|obernai|oberhausbergen|mittelhausbergen|orl[ée]ans|tours|chartres)\b/i);if(vi)set("ville",vi[1][0].toUpperCase()+vi[1].slice(1).toLowerCase());
-  const dp=t.match(/(?:dpe|classe [ée]nergie|consommation [ée]nerg[ée]tique|[ée]tiquette [ée]nergie)[^a-z]{0,25}\b([a-g])\b/)||t.match(/classe\s*[:\-]?\s*([a-g])\b/);if(dp)set("dpe",dp[1].toUpperCase());
-  const dd=t.match(/(?:dpe|diagnostic)[^.]{0,60}(20[12]\d)/);if(dd)set("dpedate",dd[1]);
-  const ch=t.match(/charges?[^\d€]{0,40}(\d[\d\s.,]*)\s*(?:€|euros)\s*(?:\/|par)?\s*(an|mois|mensuel|annuel)?/);if(ch){let v=num(ch[1]);if(/mois|mensuel/.test(ch[2]||"")||v<400)v*=12;set("charges",Math.round(v));}
-  const tf=t.match(/taxe fonci[èe]re[^\d]{0,25}(\d[\d\s.,]*)/);if(tf)set("tf",Math.round(num(tf[1])));
-  if(/rez[- ]de[- ]chauss[ée]e|\brdc\b/.test(t))set("etage","RDC");else{const e=t.match(/(\d+)\s*(?:e|er|[èe]me|°)\s*[ée]tage/);if(e){const n=+e[1];set("etage",n>=4?"4 et +":String(n));}}
-  if(/sans ascenseur/.test(t))set("asc","Non");else if(/ascenseur/.test(t))set("asc","Oui");
-  if(/chauffage[^.]{0,20}collectif/.test(t))set("heat","Collectif");else if(/chauffage[^.]{0,25}gaz|chaudi[èe]re gaz/.test(t))set("heat","Individuel gaz");else if(/chauffage[^.]{0,25}[ée]lectrique|radiateurs? [ée]lectrique|convecteur/.test(t))set("heat","Individuel électrique");
-  if(/locataire en place|vendu lou[ée]|bail en cours|actuellement lou[ée]/.test(t))set("occ","Loué");else if(/vendu libre|libre de toute occupation|libre [àa] la vente/.test(t))set("occ","Libre");
-  const ly=t.match(/loyer[^\d]{0,25}(\d{3,4})/);if(ly)set("loyer",ly[1]);
-  if(/aucun(s)? travaux/.test(t))set("worksAG","Aucun");else if(/travaux (vot[ée]s|pr[ée]vus|[àa] venir)/.test(t))set("worksAG","Votés ou prévus");
-  if(/\bcave\b/.test(t))$("cave").checked=true;if(/parking|garage|stationnement|\bbox\b/.test(t))$("parking").checked=true;if(/balcon|terrasse|loggia/.test(t))$("balcon").checked=true;
-  const rf=raw.match(/r[ée]f(?:[ée]rence)?\.?\s*(?:annonce)?\s*[:\-n°]*\s*([A-Z0-9][A-Z0-9-]{3,})/i);if(rf)set("ref",rf[1]);
-  refresh();if(!quiet)toast("Caractéristiques pré-remplies : vérifiez-les");
+  if(ty){const k=ty[1];v.type=/plateau|transformer/.test(k)?"Plateau":/studio|1/.test(k)?"Studio":/2/.test(k)?"T2":k==="maison"?"Maison":"T3 et +";}
+  const vi=raw.match(/\b(haguenau|strasbourg|schiltigheim|bischheim|saverne|obernai|oberhausbergen|mittelhausbergen|orl[ée]ans|tours|chartres)\b/i);if(vi)v.ville=vi[1][0].toUpperCase()+vi[1].slice(1).toLowerCase();
+  const dp=t.match(/(?:dpe|classe [ée]nergie|consommation [ée]nerg[ée]tique|[ée]tiquette [ée]nergie)[^a-z]{0,25}\b([a-g])\b/)||t.match(/classe\s*[:\-]?\s*([a-g])\b/);if(dp)v.dpe=dp[1].toUpperCase();
+  const dd=t.match(/(?:dpe|diagnostic)[^.]{0,60}(20[12]\d)/);if(dd)v.dpedate=dd[1];
+  const ch=t.match(/charges?[^\d€]{0,40}(\d[\d\s.,]*)\s*(?:€|euros)\s*(?:\/|par)?\s*(an|mois|mensuel|annuel|trimestre)?/);if(ch){let x=num(ch[1]);if(/trimestre/.test(ch[2]||""))x*=4;else if(/mois|mensuel/.test(ch[2]||"")||x<400)x*=12;v.charges=Math.round(x);}
+  const tf=t.match(/taxe fonci[èe]re[^\d]{0,25}(\d[\d\s.,]*)/);if(tf)v.tf=Math.round(num(tf[1]));
+  if(/rez[- ]de[- ]chauss[ée]e|\brdc\b/.test(t))v.etage="RDC";else{const e=t.match(/(\d+)\s*(?:e|er|[èe]me|°)\s*[ée]tage/);if(e){const n=+e[1];v.etage=n>=4?"4 et +":String(n);}}
+  if(/sans ascenseur|pas d'ascenseur|ascenseur\s*:\s*non/.test(t))v.asc="Non";else if(/ascenseur/.test(t))v.asc="Oui";
+  if(/chauffage[^.]{0,20}collectif/.test(t))v.heat="Collectif";else if(/chauffage[^.]{0,25}gaz|chaudi[èe]re gaz/.test(t))v.heat="Individuel gaz";else if(/chauffage[^.]{0,25}[ée]lectrique|radiateurs? [ée]lectrique|convecteur/.test(t))v.heat="Individuel électrique";
+  if(/locataire en place|vendu lou[ée]|bail en cours|actuellement lou[ée]|occupation\s*:\s*(oui|lou)/.test(t))v.occ="Loué";else if(/vendu libre|libre de toute occupation|libre [àa] la vente|occupation\s*:\s*(non|libre|vide|vacant)/.test(t))v.occ="Libre";
+  const ly=t.match(/loyer[^\d]{0,25}(\d{3,4})/);if(ly)v.loyer=ly[1];
+  if(/aucun(s)? travaux|travaux\s*:\s*(non|aucun|rien)/.test(t))v.worksAG="Aucun";else if(/travaux (vot[ée]s|pr[ée]vus|[àa] venir)|ravalement|toiture [àa] refaire/.test(t))v.worksAG="Votés ou prévus";
+  if(/\bcave\b/.test(t)&&!/(pas de|sans) cave/.test(t))v.cave=true;if(/parking|garage|stationnement|\bbox\b/.test(t)&&!/(pas de|sans) (parking|garage)/.test(t))v.parking=true;if(/balcon|terrasse|loggia/.test(t)&&!/(pas de|sans) (balcon|terrasse)/.test(t))v.balcon=true;
+  const rf=raw.match(/r[ée]f(?:[ée]rence)?\.?\s*(?:annonce)?\s*[:\-n°]*\s*([A-Z0-9][A-Z0-9-]{3,})/i);if(rf)v.ref=rf[1];
+  return v;}
+// Remplit les champs vides ; renvoie les valeurs différentes des champs déjà saisis
+function applyVals(v){const done=[],diff=[];
+  Object.entries(v).forEach(([f,x])=>{
+    if(CHECKS.includes(f)){if(!$(f).checked){$(f).checked=true;done.push(f);}return;}
+    const cur=V(f);if(!cur){$(f).value=x;if($(f).value!=="")done.push(f);}else if(String(x)!==cur&&String(num(String(x)))!==String(num(cur)))diff.push({f,old:cur,nv:String(x)});});
+  return{done,diff};}
+function prefill(quiet){
+  const raw=$("ad").value;if(norm(raw).trim().length<30){refresh();return;}
+  applyVals(extractVals(raw));refresh();if(!quiet)toast("Caractéristiques pré-remplies : vérifiez-les");}
+
+// ---------- Réponse du vendeur ----------
+let asked=[],answered={};
+const PFX={charges:"charges",tf:"taxe foncière",dpe:"dpe",dpedate:"dpe réalisé en",heat:"chauffage",rent:"loyer",year:"construction",occ:"occupation :",works:"travaux :",floor:"",annex:""};
+function parseRep(quiet){
+  const raw=$("rep").value;if(raw.trim().length<3){answered={};refresh();$("conf").innerHTML="";return;}
+  const parts=raw.split(/(?:^|\n)\s*(\d{1,2})\s*[.)\-:–]\s*/);let enriched=parts[0]||"";answered={};
+  for(let k=1;k<parts.length;k+=2){const n=+parts[k],ans=(parts[k+1]||"").trim(),id=asked[n-1];
+    if(id&&ans){answered[id]=1;enriched+="\n"+(PFX[id]??"")+" "+ans;}else enriched+="\n"+ans;}
+  const {done,diff}=applyVals(extractVals(enriched));refresh();
+  $("conf").innerHTML=diff.length?`<div class="conf"><p>${diff.length} valeur${diff.length>1?"s":""} différente${diff.length>1?"s":""} de la saisie actuelle</p>${diff.map((d,i)=>`<label><input type="checkbox" data-i="${i}" checked>${FLAB[d.f]||d.f} : ${d.old.replace(/</g,"&lt;")} → <b>${d.nv.replace(/</g,"&lt;")}</b></label>`).join("")}<button id="applyDiff">Remplacer la sélection</button></div>`:"";
+  if(diff.length)$("applyDiff").addEventListener("click",()=>{$("conf").querySelectorAll("input:checked").forEach(cb=>{const d=diff[+cb.dataset.i];$(d.f).value=d.nv;});$("conf").innerHTML="";refresh();toast("Caractéristiques corrigées");});
+  if(!quiet)toast(done.length?`${done.length} caractéristique${done.length>1?"s":""} mise${done.length>1?"s":""} à jour`:"Aucune nouvelle caractéristique détectée");
 }
 
 // Un champ saisi vaut "information obtenue"
@@ -304,9 +337,9 @@ function fieldFound(){const o={};
   return o;}
 
 function refresh(){
-  const t=norm($("ad").value),ff=fieldFound(),prev=ctx.found||{};
+  const t=norm($("ad").value+"\n"+$("rep").value),ff=fieldFound(),prev=ctx.found||{};
   ctx={t,plateau:V("type")==="Plateau"||/(plateau|[àa] transformer|local (commercial|professionnel))/.test(t),found:{}};
-  ITEMS.forEach(it=>{const fd=!!ff[it.id]||(t.length>0&&it.r.test(t));
+  ITEMS.forEach(it=>{const fd=!!ff[it.id]||!!answered[it.id]||(t.trim().length>0&&it.r.test(t));
     if(prev[it.id]!==fd)state[it.id]=!fd; ctx.found[it.id]=fd;});
   renderFacts();renderList();build();save();
 }
@@ -442,7 +475,7 @@ function val(n){return document.querySelector(`input[name="${n}"]:checked`).valu
 
 function build(){
   const mail=val("chan")==="mail",agence=val("seller")==="agence";
-  const qs=visible().filter(it=>state[it.id]);
+  const qs=visible().filter(it=>state[it.id]);if(!$("rep").value.trim())asked=qs.map(it=>it.id);
   const docs=[...new Set(visible().map(it=>it.d).filter(Boolean))];
   const desc=[V("type")==="Plateau"?"plateau":V("type").toLowerCase(),V("surf")?V("surf")+" m²":"",V("ville")?"à "+V("ville"):""].filter(Boolean).join(" ");
   let m=mail&&agence?"Madame, Monsieur,\n\n":"Bonjour,\n\n";
@@ -462,9 +495,9 @@ const HK="ck-hist-v1";let curId=null;
 const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 function getHist(){try{return JSON.parse(localStorage.getItem(HK)||"[]");}catch(e){return[];}}
 function setHist(h){try{localStorage.setItem(HK,JSON.stringify(h));}catch(e){}}
-function snap(){const o={ad:$("ad").value,state:{...state},found:{...ctx.found}};FIELDS.filter(f=>!PROFILE.includes(f)).forEach(f=>o[f]=$(f).value);CHECKS.forEach(c=>o[c]=$(c).checked);return o;}
+function snap(){const o={ad:$("ad").value,rep:$("rep").value,asked:[...asked],answered:{...answered},state:{...state},found:{...ctx.found}};FIELDS.filter(f=>!PROFILE.includes(f)).forEach(f=>o[f]=$(f).value);CHECKS.forEach(c=>o[c]=$(c).checked);return o;}
 function upsertHist(){
-  if(!V("prix")&&!V("ref")&&V("ad").length<30)return;
+  if(!V("prix")&&!V("ref")&&V("ad").length<30&&V("rep").length<30)return;
   if(!curId)curId=newId();
   const h=getHist(),now=Date.now(),i=h.findIndex(x=>x.id===curId),miss=visible().filter(it=>!ctx.found[it.id]).length;
   let cf=null,rb=null;const p=hyp();
@@ -491,12 +524,12 @@ function renderHist(){
   $("hist").querySelectorAll("[data-open]").forEach(b=>b.addEventListener("click",()=>openHist(b.dataset.open)));
   $("hist").querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>delHist(b.dataset.del)));
 }
-function fillForm(o){$("ad").value=o.ad||"";FIELDS.filter(f=>!PROFILE.includes(f)).forEach(f=>$(f).value=o[f]??"");CHECKS.forEach(c=>$(c).checked=!!o[c]);}
+function fillForm(o){$("ad").value=o.ad||"";$("rep").value=o.rep||"";asked=o.asked||[];answered=o.answered||{};$("conf").innerHTML="";FIELDS.filter(f=>!PROFILE.includes(f)).forEach(f=>$(f).value=o[f]??"");CHECKS.forEach(c=>$(c).checked=!!o[c]);}
 function openHist(id){const x=getHist().find(e=>e.id===id);if(!x)return;curId=id;fillForm(x.data);state={...(x.data.state||{})};ctx={found:{...(x.data.found||{})}};refresh();tab("q");toast("Annonce ouverte");}
 function delHist(id){if(!confirm("Supprimer cette annonce de l'historique ?"))return;setHist(getHist().filter(e=>e.id!==id));if(id===curId)clearForm();renderHist();}
 function clearForm(){curId=null;fillForm({});state={};ctx={};refresh();}
-function save(){upsertHist();try{const o={ad:$("ad").value,sign:V("sign"),seller:val("seller"),chan:val("chan"),state};FIELDS.forEach(f=>o[f]=$(f).value);CHECKS.forEach(c=>o[c]=$(c).checked);o.curId=curId;localStorage.setItem("ck-annonce-v2",JSON.stringify(o));}catch(e){}}
-function load(){try{const s=JSON.parse(localStorage.getItem("ck-annonce-v2")||"null");if(!s)return;curId=s.curId||null;if(s.state)state=s.state;$("ad").value=s.ad||"";if(s.sign)$("sign").value=s.sign;
+function save(){upsertHist();try{const o={ad:$("ad").value,sign:V("sign"),seller:val("seller"),chan:val("chan"),state};FIELDS.forEach(f=>o[f]=$(f).value);CHECKS.forEach(c=>o[c]=$(c).checked);o.curId=curId;o.rep=$("rep").value;o.asked=asked;o.answered=answered;localStorage.setItem("ck-annonce-v2",JSON.stringify(o));}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem("ck-annonce-v2")||"null");if(!s)return;curId=s.curId||null;if(s.state)state=s.state;$("rep").value=s.rep||"";asked=s.asked||[];answered=s.answered||{};$("ad").value=s.ad||"";if(s.sign)$("sign").value=s.sign;
   FIELDS.forEach(f=>{if(s[f]!==undefined)$(f).value=s[f];});CHECKS.forEach(c=>$(c).checked=!!s[c]);
   ["seller","chan"].forEach(n=>{const r=document.querySelector(`input[name="${n}"][value="${s[n]}"]`);if(r)r.checked=true;});}catch(e){}}
 function reset(){if(!confirm("Commencer une nouvelle annonce ? L'annonce actuelle reste dans l'historique."))return;clearForm();window.scrollTo(0,0);}
@@ -504,27 +537,29 @@ function reset(){if(!confirm("Commencer une nouvelle annonce ? L'annonce actuell
 $("copy").addEventListener("click",copy);
 $("share").addEventListener("click",share);
 $("new").addEventListener("click",reset);
-document.querySelectorAll("main input:not(#ad):not([data-id]),main select").forEach(el=>el.addEventListener(el.type==="checkbox"||el.tagName==="SELECT"||el.type==="radio"?"change":"input",refresh));
+document.querySelectorAll("main input:not(#ad):not([data-id]):not([type=file]),main select").forEach(el=>el.addEventListener(el.type==="checkbox"||el.tagName==="SELECT"||el.type==="radio"?"change":"input",refresh));
 $("ad").addEventListener("paste",()=>setTimeout(()=>prefill(false),0));
 $("ad").addEventListener("input",e=>{if(e.inputType==="insertFromPaste")return;clearTimeout(refresh.h);refresh.h=setTimeout(()=>prefill(true),500);});
 
 // Lecture des captures (OCR local avec Tesseract.js, chargé à la demande)
 function loadTess(){return window.Tesseract?Promise.resolve():new Promise((ok,ko)=>{const sc=document.createElement("script");sc.src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js";sc.onload=ok;sc.onerror=()=>ko(new Error("chargement"));document.head.appendChild(sc);});}
-async function readImages(files){
-  if(!files.length)return;const st=$("ocr"),lab=document.querySelector(".upl");lab.style.opacity=.5;
+async function readImages(files,ta,st,lab,after){
+  if(!files.length)return;lab.style.opacity=.5;
   try{
     st.textContent="Chargement du module de lecture…";await loadTess();
     let cur=0;const worker=await Tesseract.createWorker("fra",1,{logger:m=>{if(m.status==="recognizing text")st.textContent=`Lecture de la capture ${cur+1}/${files.length} : ${Math.round(m.progress*100)} %`;}});
-    const texts=[];
-    for(cur=0;cur<files.length;cur++){const r=await worker.recognize(files[cur]);texts.push(r.data.text);}
+    const texts=[];for(cur=0;cur<files.length;cur++){const r=await worker.recognize(files[cur]);texts.push(r.data.text);}
     await worker.terminate();
-    const ad=$("ad");ad.value=(ad.value.trim()?ad.value.trim()+"\n\n":"")+texts.join("\n\n").trim();
+    ta.value=(ta.value.trim()?ta.value.trim()+"\n\n":"")+texts.join("\n\n").trim();
     st.textContent=`${files.length} capture${files.length>1?"s":""} lue${files.length>1?"s":""}. Vérifiez le texte et les caractéristiques.`;
-    prefill(false);
+    after();
   }catch(e){st.textContent="Lecture impossible ("+(e.message||"erreur")+"). Vérifiez la connexion, ou copiez-collez le texte.";}
-  finally{lab.style.opacity=1;$("img").value="";}
+  finally{lab.style.opacity=1;}
 }
-$("img").addEventListener("change",e=>readImages([...e.target.files]));
+$("img").addEventListener("change",e=>{readImages([...e.target.files],$("ad"),$("ocr"),document.querySelector('label[for="img"]'),()=>prefill(false));e.target.value="";});
+$("imgRep").addEventListener("change",e=>{readImages([...e.target.files],$("rep"),$("ocrRep"),document.querySelector('label[for="imgRep"]'),()=>parseRep(false));e.target.value="";});
+$("rep").addEventListener("paste",()=>setTimeout(()=>parseRep(false),0));
+$("rep").addEventListener("input",e=>{if(e.inputType==="insertFromPaste")return;clearTimeout(parseRep.h);parseRep.h=setTimeout(()=>parseRep(true),600);});
 function tab(t){if(t==="h")renderHist();["q","a","h"].forEach(k=>{$("tab-"+k).classList.toggle("hide",k!==t);$("t-"+k).setAttribute("aria-selected",k===t);});window.scrollTo(0,0);}
 document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>tab(b.dataset.tab)));
 load();refresh();
