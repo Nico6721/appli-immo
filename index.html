@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Checklist annonce immo</title>
+<meta name="theme-color" content="#125e73">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f7f9fa;--card:#ffffff;--ink:#1d2b36;--soft:#5b6b77;--line:#d6dde3;
+  --accent:#125e73;--accent-ink:#ffffff;--ok:#2f7d5b;--ok-bg:#e6f3ec;--miss:#a45f00;--miss-bg:#fdf1de;--bad:#b3261e;--bad-bg:#fbe7e5;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#121a20;--card:#1a242c;--ink:#e6edf2;--soft:#9aabb7;--line:#2e3c46;
+  --accent:#4fb3cc;--accent-ink:#0d1a20;--ok:#6cc79c;--ok-bg:#16322a;--miss:#f0b35a;--miss-bg:#3a2a12;--bad:#f28b82;--bad-bg:#3b1a18;}}
+:root[data-theme="dark"]{
+  --paper:#121a20;--card:#1a242c;--ink:#e6edf2;--soft:#9aabb7;--line:#2e3c46;
+  --accent:#4fb3cc;--accent-ink:#0d1a20;--ok:#6cc79c;--ok-bg:#16322a;--miss:#f0b35a;--miss-bg:#3a2a12;--bad:#f28b82;--bad-bg:#3b1a18;}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 "Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px 16px 40px}
+h1{font-size:1.5rem;line-height:1.2;margin:8px 0 4px}
+.sub{color:var(--soft);margin:0 0 20px}
+section{margin:0 0 24px}
+h2{font-size:1.1rem;margin:0 0 10px;display:flex;gap:10px;align-items:center}
+h2 .n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:.9rem}
+textarea,input[type=text],input[type=number]{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+textarea{min-height:160px;resize:vertical}
+textarea:focus,input:focus,button:focus-visible,a:focus-visible,label:focus-within{outline:3px solid var(--accent);outline-offset:1px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;flex:1 1 150px}
+.seg label{flex:1;text-align:center;padding:9px 6px;cursor:pointer;background:var(--card);font-size:.92rem}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked){background:var(--accent);color:var(--accent-ink);font-weight:700}
+button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:13px 16px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.full{width:100%}
+.facts{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
+.fact{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.fact b{display:block;font-size:1.05rem}
+.fact span{color:var(--soft);font-size:.82rem}
+.alert{border-radius:10px;padding:10px 12px;margin-top:10px;background:var(--bad-bg);color:var(--bad);font-weight:700}
+.summary{color:var(--soft);margin:0 0 10px;font-size:.95rem}
+.grp{margin:14px 0 6px;font-weight:700;color:var(--soft);font-size:.9rem}
+.item{display:flex;gap:10px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--miss);border-radius:8px;padding:10px;margin-bottom:6px;cursor:pointer}
+.item.found{border-left-color:var(--ok)}
+.item input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--accent)}
+.item .t{flex:1;min-width:0}
+.badge{display:inline-block;font-size:.75rem;font-weight:700;border-radius:6px;padding:1px 7px;margin-left:4px}
+.found .badge{background:var(--ok-bg);color:var(--ok)}
+.item:not(.found) .badge{background:var(--miss-bg);color:var(--miss)}
+.snip{display:block;color:var(--soft);font-size:.85rem;margin-top:3px;overflow-wrap:anywhere}
+.links{display:grid;gap:6px;padding:0;list-style:none;margin:0}
+.links a{display:block;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--accent);text-decoration:none}
+.links small{display:block;color:var(--soft)}
+#msg{min-height:260px;font-size:.95rem}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:10px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.hide{display:none}
+.cards{display:grid;grid-template-columns:1fr;gap:10px}
+@media (min-width:560px){.cards{grid-template-columns:1fr 1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.card.best{border:2px solid var(--ok)}
+.card h3{margin:0 0 2px;font-size:1rem}
+.card .sub2{color:var(--soft);font-size:.8rem;margin:0 0 8px}
+.card dl{display:grid;grid-template-columns:1fr auto;gap:4px 10px;margin:0;font-size:.92rem}
+.card dt{color:var(--soft)}.card dd{margin:0;font-weight:700;text-align:right}
+.card dd.pos{color:var(--ok)}.card dd.neg{color:var(--bad)}
+.card .tag{display:inline-block;background:var(--ok-bg);color:var(--ok);font-size:.75rem;font-weight:700;border-radius:6px;padding:1px 7px;margin-left:6px}
+.cat{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;padding:0}
+.cat summary{list-style:none;display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer}
+.cat summary::-webkit-details-marker{display:none}
+.cat summary::before{content:"";flex:none;width:8px;height:8px;border-right:2px solid var(--soft);border-bottom:2px solid var(--soft);transform:rotate(-45deg);transition:transform .15s}
+.cat[open] summary::before{transform:rotate(45deg)}
+.cn{flex:1;font-weight:700}
+.cc{font-size:.8rem;color:var(--miss);text-align:right}
+.cc.ok{color:var(--ok)}
+.cat .item{margin:0 8px 6px}
+@media (prefers-reduced-motion:reduce){.cat summary::before{transition:none}}
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--paper);padding:8px 0;margin:0 0 16px;border-bottom:1px solid var(--line)}
+.tabs button{background:var(--card);color:var(--soft);border:1px solid var(--line)}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.upl{display:block;text-align:center;margin-top:8px;padding:13px 16px;border:1px solid var(--accent);color:var(--accent);border-radius:10px;font-weight:700;cursor:pointer}
+.upl input{position:absolute;opacity:0;width:1px;height:1px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid .w{grid-column:1/-1}
+.f label{display:block;font-size:.85rem;color:var(--soft);margin-bottom:3px}
+.f input,.f select{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+.f select{appearance:auto}
+.checks{display:flex;gap:14px;flex-wrap:wrap;padding:6px 0}
+.checks label{display:flex;gap:6px;align-items:center;color:var(--ink);font-size:.95rem}
+.checks input{width:20px;height:20px;accent-color:var(--accent)}
+details{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:12px}
+summary{cursor:pointer;font-weight:700}
+details .grid{margin-top:10px}
+.note{color:var(--soft);font-size:.82rem;margin:8px 0 0}
+.fact.good b{color:var(--ok)}.fact.warn b{color:var(--bad)}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Checklist annonce</h1>
+  <p class="sub">Questionnez le vendeur, puis analysez la rentabilité.</p>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="t-q" aria-selected="true" data-tab="q">Questions</button>
+    <button role="tab" id="t-a" aria-selected="false" data-tab="a">Analyse</button>
+  </nav>
+  <div id="tab-q" class="tab">
+  <section>
+    <h2><span class="n">1</span>Annonce</h2>
+    <textarea id="ad" placeholder="Collez ici le texte de l'annonce, ou ajoutez des captures d'écran : les caractéristiques se remplissent automatiquement"></textarea>
+    <label class="upl" for="img">📷 Ajouter des captures de l'annonce<input type="file" id="img" accept="image/*" multiple></label>
+    <p class="note" id="ocr">Lecture faite sur le téléphone, connexion nécessaire. Plusieurs captures possibles.</p>
+  </section>
+
+  <section>
+    <h2><span class="n">2</span>Caractéristiques</h2>
+    <div class="grid">
+      <div class="f"><label for="prix">Prix (€)</label><input id="prix" type="number" inputmode="numeric"></div>
+      <div class="f"><label for="surf">Surface (m²)</label><input id="surf" type="number" inputmode="decimal" step="0.01"></div>
+      <div class="f"><label for="type">Type</label><select id="type"><option value="">—</option><option>Studio</option><option>T2</option><option>T3 et +</option><option>Maison</option><option value="Plateau">Plateau / à transformer</option></select></div>
+      <div class="f"><label for="ville">Ville</label><input id="ville" type="text"></div>
+      <div class="f"><label for="dpe">Classe DPE</label><select id="dpe"><option value="">Inconnue</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option></select></div>
+      <div class="f"><label for="dpedate">Année du DPE</label><input id="dpedate" type="number" inputmode="numeric" placeholder="ex. 2024"></div>
+      <div class="f"><label for="charges">Charges copro (€/an)</label><input id="charges" type="number" inputmode="numeric"></div>
+      <div class="f"><label for="tf">Taxe foncière (€/an)</label><input id="tf" type="number" inputmode="numeric"></div>
+      <div class="f"><label for="etage">Étage</label><select id="etage"><option value="">—</option><option>RDC</option><option>1</option><option>2</option><option>3</option><option>4 et +</option></select></div>
+      <div class="f"><label for="asc">Ascenseur</label><select id="asc"><option value="">—</option><option>Oui</option><option>Non</option></select></div>
+      <div class="f"><label for="heat">Chauffage</label><select id="heat"><option value="">—</option><option>Individuel électrique</option><option>Individuel gaz</option><option>Collectif</option><option>Autre</option></select></div>
+      <div class="f"><label for="occ">Occupation</label><select id="occ"><option value="">—</option><option>Libre</option><option>Loué</option></select></div>
+      <div class="f"><label for="loyer">Loyer HC (€/mois)</label><input id="loyer" type="number" inputmode="numeric" placeholder="actuel ou estimé"></div>
+      <div class="f"><label for="worksAG">Travaux copro à venir</label><select id="worksAG"><option value="">—</option><option>Aucun</option><option>Votés ou prévus</option></select></div>
+      <div class="f w"><label>Annexes</label><div class="checks">
+        <label><input type="checkbox" id="cave">Cave</label><label><input type="checkbox" id="parking">Parking</label><label><input type="checkbox" id="balcon">Balcon / terrasse</label></div></div>
+      <div class="f w"><label for="ref">Référence de l'annonce</label><input id="ref" type="text"></div>
+    </div>
+  </section>
+
+<section id="s2">
+    <h2><span class="n">3</span>Checklist</h2>
+    <p class="summary" id="sum"></p>
+    <div id="list"></div>
+  </section>
+
+  <section id="s3">
+    <h2><span class="n">4</span>Message</h2>
+    <div class="row">
+      <div class="seg" role="radiogroup" aria-label="Vendeur">
+        <label><input type="radio" name="seller" value="part" checked>Particulier</label>
+        <label><input type="radio" name="seller" value="agence">Agence</label>
+      </div>
+      <div class="seg" role="radiogroup" aria-label="Canal">
+        <label><input type="radio" name="chan" value="court" checked>Message court</label>
+        <label><input type="radio" name="chan" value="mail">Email complet</label>
+      </div>
+    </div>
+    <div class="f" style="margin-bottom:8px"><label for="sign">Signature</label><input id="sign" type="text" value=""></div>
+    <textarea id="msg" aria-label="Message généré"></textarea>
+    <div class="actions">
+      <button id="copy">Copier</button>
+      <button class="ghost" id="share">Partager</button>
+    </div>
+    <button class="full ghost" id="new" style="margin-top:8px">Nouvelle annonce</button>
+  </section>
+  </div>
+  <div id="tab-a" class="tab hide">
+  <section>
+    <h2><span class="n">1</span>Hypothèses</h2>
+    <div class="grid">
+      <div class="f"><label for="travaux">Travaux prévus (€)</label><input id="travaux" type="number" inputmode="numeric" placeholder="0"></div>
+      <div class="f"><label for="mobilier">Mobilier à acheter (€)</label><input id="mobilier" type="number" inputmode="numeric" placeholder="0"></div>
+        <div class="f"><label for="apport">Apport (€)</label><input id="apport" type="number" inputmode="numeric" placeholder="25000"></div>
+        <div class="f"><label for="taux">Taux crédit (%)</label><input id="taux" type="number" inputmode="decimal" step="0.01" placeholder="3.55"></div>
+        <div class="f"><label for="duree">Durée (ans)</label><input id="duree" type="number" inputmode="numeric" placeholder="25"></div>
+        <div class="f"><label for="rev">Revenus nets foyer (€/mois)</label><input id="rev" type="number" inputmode="numeric"></div>
+        <div class="f w"><label for="cred">Crédits en cours (€/mois, assurance comprise)</label><input id="cred" type="number" inputmode="numeric"></div>
+      </div>
+    <div class="grid" style="margin-top:10px">
+      <div class="f"><label for="tmi">Tranche d'imposition (TMI)</label><select id="tmi"><option value="0">0 %</option><option value="11" selected>11 %</option><option value="30">30 %</option><option value="41">41 %</option><option value="45">45 %</option></select></div>
+      <div class="f"><label for="ps">Prélèvements sociaux (%)</label><input id="ps" type="number" inputmode="decimal" step="0.1" placeholder="17.2"></div>
+      <div class="f"><label for="loyerNu">Loyer nu HC (€/mois)</label><input id="loyerNu" type="number" inputmode="numeric" placeholder="auto : meublé − 12 %"></div>
+      <div class="f"><label for="reval">Revalorisation du bien (%/an)</label><input id="reval" type="number" inputmode="decimal" step="0.1" placeholder="1"></div>
+      <div class="f"><label for="hz">Horizon de revente</label><select id="hz"><option value="10" selected>10 ans</option><option value="15">15 ans</option><option value="20">20 ans</option><option value="22">22 ans (exo IR)</option><option value="25">25 ans</option><option value="30">30 ans (exo totale)</option></select></div>
+      <div class="f"><label for="vac">Un mois de vacance par an</label><select id="vac"><option>Oui</option><option>Non</option></select></div>
+    </div>
+    <p class="note">Le prix, la surface, le loyer, les charges, la taxe foncière et le DPE viennent de l'onglet Questions. Le financement est enregistré uniquement sur ce téléphone.</p>
+  </section>
+  <section>
+    <h2><span class="n">2</span>Résultats</h2>
+    <div id="facts"><p class="summary">Renseignez au moins le prix et le loyer.</p></div>
+  </section>
+  <section>
+    <h2><span class="n">3</span>Comparatif des montages</h2>
+    <div id="cmp"><p class="summary">Renseignez au moins le prix et le loyer.</p></div>
+  </section>
+  </div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+let ctx={}, state={};
+
+// Chaque point : r = regex "information présente", q = question, d = document à demander (email)
+const ITEMS=[
+ {g:"Prix et vente",id:"incl",l:"Ce que comprend le prix",r:/(prix|vendu).{0,40}(inclu|compris|avec).{0,30}(mobilier|meubl|parking|cave|garage)/,q:"Le prix inclut-il le mobilier, le parking et la cave ? S'agit-il de lots séparés ?"},
+ {g:"Prix et vente",id:"since",l:"Ancienneté de la vente et motif",r:/(\bmotif\b|mutation|départ|succession)/,q:"Depuis quand le bien est-il en vente, et quel est votre calendrier ?"},
+ {g:"Prix et vente",id:"occ",l:"Occupation (loué ou libre)",r:/(\blou[ée]\b|locataire|bail en cours|vendu libre|libre de toute occupation|libre à la vente|occupé)/,q:"Le bien est-il loué actuellement ? Si oui : loyer, charges, type de bail, date de fin et dépôt de garantie."},
+ {g:"Prix et vente",id:"rent",l:"Loyer pratiqué",r:/loyer[^\d]{0,25}\d/,q:"Quel loyer est ou était pratiqué, et quelle a été la durée moyenne d'occupation ?",c:c=>!c.found.occ||/lou[ée]|locataire|bail/.test(c.t)},
+ {g:"Charges et copropriété",id:"charges",l:"Charges de copropriété",r:/charges?[^\d€]{0,40}\d[\d\s.,]*\s*(€|euros)/,q:"Quel est le montant des charges de copropriété annuelles, et que comprennent-elles ?",d:"le dernier relevé de charges"},
+ {g:"Charges et copropriété",id:"recup",l:"Part récupérable sur le locataire",r:/r[ée]cup[ée]rable/,q:"Quelle part des charges est récupérable sur le locataire ?"},
+ {g:"Charges et copropriété",id:"tf",l:"Taxe foncière",r:/(taxe fonci[èe]re|\btf\b)[^\d]{0,25}\d/,q:"Quel est le montant de la dernière taxe foncière (ordures ménagères comprises) ?",d:"le dernier avis de taxe foncière"},
+ {g:"Charges et copropriété",id:"works",l:"Travaux votés ou à venir, fonds travaux",r:/(travaux (vot[ée]s|pr[ée]vus|[àa] venir|en cours)|fonds (de )?travaux|aucun(s)? travaux)/,q:"Des travaux sont-ils votés ou envisagés en AG (toiture, façade, ascenseur…) ? Quel est le montant du fonds travaux ?",d:"les PV des 3 dernières AG"},
+ {g:"Charges et copropriété",id:"paid",l:"Travaux récents entièrement payés",r:/(enti[èe]rement )?(pay[ée]s|sold[ée]s|financ[ée]s)/,q:"Les travaux récents de la copropriété sont-ils entièrement payés, sans emprunt collectif ni appel de fonds restant ?",c:c=>/(isolation|ravalement|r[ée]nov|toiture|fa[çc]ade)/.test(c.t)},
+ {g:"Charges et copropriété",id:"lots",l:"Taille de la copropriété, procédure",r:/(\d+\s*lots|proc[ée]dure)/,q:"Combien de lots compte la copropriété ? Une procédure est-elle en cours ?"},
+ {g:"Charges et copropriété",id:"syndic",l:"Syndic",r:/syndic/,q:"Le syndic est-il professionnel ou bénévole ?",d:"le carnet d'entretien et le plan pluriannuel de travaux s'il existe"},
+ {g:"Charges et copropriété",id:"year",l:"Année de construction",r:/(construit|construction|immeuble|r[ée]sidence|b[âa]timent)[^\d]{0,20}(1[89]\d\d|20[0-2]\d)|ann[ée]e[^\d]{0,15}(1[89]\d\d|20[0-2]\d)/,q:"Quelle est l'année de construction de l'immeuble ?",d:"les diagnostics (électricité, gaz, amiante, plomb, ERP, Carrez)"},
+ {g:"Charges et copropriété",id:"court",l:"Location courte durée",r:/(courte dur[ée]e|airbnb|saisonni|meubl[ée] de tourisme)/,q:"Le règlement de copropriété autorise-t-il la location meublée de courte durée ?"},
+ {g:"Énergie",id:"dpe",l:"Classe DPE",r:/((dpe|classe [ée]nergie|consommation [ée]nerg[ée]tique|diagnostic de performance)[^a-z]{0,25}\b[a-g]\b)|(classe|[ée]tiquette)\s*[:\-]?\s*[a-g]\b/,q:"Quelle est la classe DPE (énergie et GES) et la consommation en kWh/m²/an ?",d:"le rapport DPE complet (avec son numéro ADEME)"},
+ {g:"Énergie",id:"dpedate",l:"Date du DPE",r:/(dpe|diagnostic)[^.]{0,60}(20[12]\d)/,q:"De quand date le diagnostic DPE ?"},
+ {g:"Énergie",id:"heat",l:"Type de chauffage",r:/(chauffage[^.]{0,20}(individuel|collectif|[ée]lectrique|gaz|fioul|urbain)|radiateurs?|pompe [àa] chaleur|chaudi[èe]re|convecteur)/,q:"Le chauffage est-il individuel ou collectif ? Quel type de radiateurs et de ballon d'eau chaude ?"},
+ {g:"Énergie",id:"bills",l:"Coût de l'énergie",r:/(d[ée]penses?|factures?|co[ûu]ts?|montant estim[ée])[^.]{0,40}[ée]nergie/,q:"Quel est le montant des factures d'énergie sur les 12 derniers mois ?"},
+ {g:"Énergie",id:"win",l:"Menuiseries et ventilation",r:/(double vitrage|triple vitrage|simple vitrage|\bvmc\b|fen[êe]tres? (pvc|alu|bois))/,q:"Quel type de fenêtres (simple ou double vitrage, âge) ? Y a-t-il une VMC ?"},
+ {g:"Le bien",id:"dest",l:"Destination du lot (habitation)",r:/^(?!.*(plateau|local (commercial|professionnel)|[àa] transformer|bureaux?)).*(appartement|studio|\bt[1-6]\b|\bf[1-6]\b|maison|logement)/s,q:"Dans le règlement de copropriété, le lot est-il désigné comme appartement ou comme local ?"},
+ {g:"Le bien",id:"floor",l:"Étage et ascenseur",r:/(\d+\s*(e|er|[èe]me|°)\s*[ée]tage|rez[- ]de[- ]chauss[ée]e|\brdc\b|dernier [ée]tage|ascenseur)/,q:"À quel étage se situe le bien ? Y a-t-il un ascenseur ?"},
+ {g:"Le bien",id:"expo",l:"Exposition",r:/(orient[ée]|expos[ée]|plein (sud|nord|est|ouest))/,q:"Quelle est l'exposition du logement (et du balcon ou de la terrasse) ?"},
+ {g:"Le bien",id:"annex",l:"Cave, parking, local vélo",r:/(cave|parking|garage|stationnement|box|local v[ée]lo)/,q:"Le bien dispose-t-il d'une cave, d'une place de parking ou d'un local vélo ?"},
+ {g:"Le bien",id:"addr",l:"Adresse ou quartier",r:/(\d+\s*,?\s*(rue|avenue|bd|boulevard|place|all[ée]e|chemin|impasse)|quartier|proche (gare|centre|iut|h[ôo]pital))/,q:"Quelle est l'adresse exacte ou le quartier ?"},
+ {g:"Le bien",id:"furn",l:"Mobilier et électroménager",r:/(vendu meubl[ée]|enti[èe]rement meubl[ée]|[ée]lectrom[ée]nager (inclus|compris)|cuisine [ée]quip[ée]e)/,q:"Le bien est-il vendu meublé ? Pourriez-vous établir une liste chiffrée du mobilier, à annexer au compromis ?",c:c=>/meubl|mobilier|[ée]quip/.test(c.t)},
+ {g:"Le bien",id:"conn",l:"Raccordements (plateau, gros travaux)",r:/(raccord|arriv[ée]es? d'eau|compteur|linky)/,q:"Les arrivées d'eau, d'électricité (compteur) et les évacuations sont-elles présentes en limite du lot ?",c:c=>c.plateau}
+];
+
+function norm(s){return (s||"").replace(/[\u00a0\u202f]/g," ").toLowerCase();}
+function num(s){return parseFloat(String(s).replace(/[\s.]/g,"").replace(",","."));}
+function snippet(t,re){const m=t.match(re);if(!m)return"";const i=m.index,a=Math.max(0,i-15),b=Math.min(t.length,i+m[0].length+25);return (a?"…":"")+t.slice(a,b).replace(/\s+/g," ").trim()+(b<t.length?"…":"");}
+const fmt=n=>Math.round(n).toLocaleString("fr-FR");
+const FIELDS=["prix","surf","type","ville","dpe","dpedate","charges","tf","etage","asc","heat","occ","loyer","worksAG","travaux","mobilier","ref","apport","taux","duree","rev","cred","tmi","ps","loyerNu","reval","vac","hz"];
+const CHECKS=["cave","parking","balcon"];
+const PROFILE=["apport","taux","duree","rev","cred","tmi","ps","reval","vac","hz"];
+const V=id=>$(id).value.trim(), N=id=>{const v=parseFloat(V(id).replace(",","."));return isNaN(v)?null:v;};
+
+// Pré-remplissage depuis le texte : ne remplace pas un champ déjà saisi
+function prefill(quiet){
+  const raw=$("ad").value,t=norm(raw);
+  if(t.trim().length<30){refresh();return;}
+  const set=(id,v)=>{if(v!==undefined&&v!==null&&v!==""&&!V(id))$(id).value=v;};
+  const pr=[...t.matchAll(/(\d{1,3}(?:[\s.]\d{3})+|\d{4,7})\s*(€|euros)/g)].map(m=>num(m[1])).filter(v=>v>=20000&&v<=3000000);
+  if(pr.length)set("prix",pr[0]);
+  const su=t.match(/(\d{1,3}(?:[.,]\d{1,2})?)\s*m(?:²|2\b)/);if(su)set("surf",num(su[1]));
+  const ty=t.match(/\b(plateau|[àa] transformer|studio|t1|f1|t2|f2|t[3-6]|f[3-6]|maison)\b/);
+  if(ty){const k=ty[1];set("type",/plateau|transformer/.test(k)?"Plateau":/studio|1/.test(k)?"Studio":/2/.test(k)?"T2":k==="maison"?"Maison":"T3 et +");}
+  const vi=raw.match(/\b(haguenau|strasbourg|schiltigheim|bischheim|saverne|obernai|oberhausbergen|mittelhausbergen|orl[ée]ans|tours|chartres)\b/i);if(vi)set("ville",vi[1][0].toUpperCase()+vi[1].slice(1).toLowerCase());
+  const dp=t.match(/(?:dpe|classe [ée]nergie|consommation [ée]nerg[ée]tique|[ée]tiquette [ée]nergie)[^a-z]{0,25}\b([a-g])\b/)||t.match(/classe\s*[:\-]?\s*([a-g])\b/);if(dp)set("dpe",dp[1].toUpperCase());
+  const dd=t.match(/(?:dpe|diagnostic)[^.]{0,60}(20[12]\d)/);if(dd)set("dpedate",dd[1]);
+  const ch=t.match(/charges?[^\d€]{0,40}(\d[\d\s.,]*)\s*(?:€|euros)\s*(?:\/|par)?\s*(an|mois|mensuel|annuel)?/);if(ch){let v=num(ch[1]);if(/mois|mensuel/.test(ch[2]||"")||v<400)v*=12;set("charges",Math.round(v));}
+  const tf=t.match(/taxe fonci[èe]re[^\d]{0,25}(\d[\d\s.,]*)/);if(tf)set("tf",Math.round(num(tf[1])));
+  if(/rez[- ]de[- ]chauss[ée]e|\brdc\b/.test(t))set("etage","RDC");else{const e=t.match(/(\d+)\s*(?:e|er|[èe]me|°)\s*[ée]tage/);if(e){const n=+e[1];set("etage",n>=4?"4 et +":String(n));}}
+  if(/sans ascenseur/.test(t))set("asc","Non");else if(/ascenseur/.test(t))set("asc","Oui");
+  if(/chauffage[^.]{0,20}collectif/.test(t))set("heat","Collectif");else if(/chauffage[^.]{0,25}gaz|chaudi[èe]re gaz/.test(t))set("heat","Individuel gaz");else if(/chauffage[^.]{0,25}[ée]lectrique|radiateurs? [ée]lectrique|convecteur/.test(t))set("heat","Individuel électrique");
+  if(/locataire en place|vendu lou[ée]|bail en cours|actuellement lou[ée]/.test(t))set("occ","Loué");else if(/vendu libre|libre de toute occupation|libre [àa] la vente/.test(t))set("occ","Libre");
+  const ly=t.match(/loyer[^\d]{0,25}(\d{3,4})/);if(ly)set("loyer",ly[1]);
+  if(/aucun(s)? travaux/.test(t))set("worksAG","Aucun");else if(/travaux (vot[ée]s|pr[ée]vus|[àa] venir)/.test(t))set("worksAG","Votés ou prévus");
+  if(/\bcave\b/.test(t))$("cave").checked=true;if(/parking|garage|stationnement|\bbox\b/.test(t))$("parking").checked=true;if(/balcon|terrasse|loggia/.test(t))$("balcon").checked=true;
+  const rf=raw.match(/r[ée]f(?:[ée]rence)?\.?\s*(?:annonce)?\s*[:\-n°]*\s*([A-Z0-9][A-Z0-9-]{3,})/i);if(rf)set("ref",rf[1]);
+  refresh();if(!quiet)toast("Caractéristiques pré-remplies : vérifiez-les");
+}
+
+// Un champ saisi vaut "information obtenue"
+function fieldFound(){const o={};
+  if(V("dpe"))o.dpe=1;if(V("dpedate"))o.dpedate=1;if(V("charges"))o.charges=1;if(V("tf"))o.tf=1;
+  if(V("etage")&&(V("asc")||V("etage")==="RDC"))o.floor=1;if(V("heat"))o.heat=1;if(V("occ"))o.occ=1;
+  if(V("occ")==="Loué"&&V("loyer"))o.rent=1;if(V("worksAG"))o.works=1;
+  if(CHECKS.some(c=>$(c).checked))o.annex=1;if(V("type")&&V("type")!=="Plateau")o.dest=1;
+  return o;}
+
+function refresh(){
+  const t=norm($("ad").value),ff=fieldFound(),prev=ctx.found||{};
+  ctx={t,plateau:V("type")==="Plateau"||/(plateau|[àa] transformer|local (commercial|professionnel))/.test(t),found:{}};
+  ITEMS.forEach(it=>{const fd=!!ff[it.id]||(t.length>0&&it.r.test(t));
+    if(prev[it.id]!==fd)state[it.id]=!fd; ctx.found[it.id]=fd;});
+  renderFacts();renderList();build();save();
+}
+
+function pmt(P,rate,years){const r=rate/100/12,n=years*12;return P<=0?0:(r?P*r/(1-Math.pow(1+r,-n)):P/n)+P*0.0025/12;}
+
+function renderFacts(){
+  renderCmp();
+  const prix=N("prix"),surf=N("surf"),loyer=N("loyer"),trav=N("travaux")||0,mob=N("mobilier")||0;
+  const apport=N("apport")??25000,taux=N("taux")??3.55,duree=N("duree")??25,rev=N("rev"),cred=N("cred");
+  const out=[],al=[];
+  if(prix){const frais=prix*0.092,cout=prix+frais+trav+mob;
+    out.push(["Coût total",fmt(cout)+" €"]);
+    if(surf)out.push(["Prix au m²",fmt(prix/surf)+" €"]);
+    if(loyer){const rb=loyer*12/cout*100;out.push(["Rendement brut",rb.toFixed(1).replace(".",",")+" %",rb>=7?"good":rb<6.5?"warn":""]);if(rb<6.5)al.push("Rendement brut sous 6,5 % : négocier ou écarter.");
+      const cp=(N("tf")??0)/12+(N("charges")??0)*0.7/12+15+50;
+      const m=pmt(cout-apport,taux,duree),cf=loyer-m-cp,cfv=loyer*11/12-m-cp;
+      out.push(["Mensualité",fmt(m)+" €"]);
+      out.push(["Cash-flow",(cf>=0?"+":"")+fmt(cf)+" €/mois",cf>=50?"good":cf<0?"warn":""]);
+      out.push(["Avec 1 mois vacant",(cfv>=0?"+":"")+fmt(cfv)+" €/mois",cfv>=50?"good":cfv<0?"warn":""]);
+      if(cfv<0)al.push("Cash-flow négatif avec 1 mois de vacance : ne respecte pas la règle d'autofinancement.");
+      const k=pmt(1,taux,duree),pmax=target=>{const L=(loyer*11/12-cp-target)/k;return (L+apport-trav-mob)/1.092;};
+      out.push(["Prix max (CF ≥ 0)",fmt(Math.max(0,pmax(0)))+" €"]);
+      out.push(["Prix max (CF ≥ +50 €)",fmt(Math.max(0,pmax(50)))+" €"]);
+      if(rev&&cred!==null){const e=(cred+m)/(rev+0.7*loyer)*100;out.push(["Endettement classique",e.toFixed(1).replace(".",",")+" %",e<=35?"good":"warn"]);if(e>35)al.push("Endettement classique au-dessus de 35 % : banque en méthode différentielle ou baisse de prix nécessaire.");}
+    }
+  }
+  const d=V("dpe");out.push(["DPE",d||"inconnu",d==="F"||d==="G"?"warn":d&&"ABCD".includes(d)?"good":""]);
+  if(d==="G")al.unshift("DPE G : location interdite en nouveau bail. À écarter sauf forte décote.");
+  else if(d==="F")al.unshift("DPE F : location interdite à partir de 2028. Chiffrer les travaux.");
+  const dy=N("dpedate");if(dy&&dy<2021)al.push("DPE antérieur à juillet 2021 : il n'est plus valable, un nouveau diagnostic est nécessaire.");
+  else if(dy&&dy<2026&&V("heat")==="Individuel électrique"&&"EFG".includes(d||"x"))al.push("Chauffage électrique et DPE antérieur à 2026 : un nouveau DPE peut faire gagner une classe.");
+  if(ctx.plateau)al.push("Plateau ou lot à transformer : vérifier la destination du lot et faire 2 à 3 devis avant l'offre.");
+  if(V("worksAG")==="Votés ou prévus")al.push("Travaux de copropriété à venir : obtenir leur montant et négocier le prix en conséquence.");
+  let h='<div class="facts">'+out.map(([k,v,c])=>`<div class="fact ${c||""}"><span>${k}</span><b>${v}</b></div>`).join("")+"</div>";
+  h+=al.map(a=>`<div class="alert">${a}</div>`).join("");
+  if(prix&&loyer)h+=`<p class="note">Hypothèses : frais d'acquisition 9,2 %, apport ${fmt(apport)} €, ${String(taux).replace(".",",")} % sur ${duree} ans + 0,25 % d'assurance, 70 % des charges de copro non récupérables, 15 €/mois de PNO et CFE, 50 €/mois d'expert-comptable, impôt nul (LMNP au réel).${N("tf")===null||N("charges")===null?" Charges ou taxe foncière manquantes : cash-flow surestimé.":""}</p>`;
+  $("facts").innerHTML=(prix||d)?h:'<p class="summary">Renseignez au moins le prix et le loyer.</p>';
+}
+
+
+// ---------- Comparatif des montages (projection 10 ans) ----------
+function sched(P,rate,yrs,H){const r=rate/100/12,n=yrs*12,m=P>0?(r?P*r/(1-Math.pow(1+r,-n)):P/n):0,ins=P*0.0025/12;let crd=P;const Y=[];
+  for(let y=0;y<H;y++){let I=0;for(let k=0;k<12&&crd>0.01;k++){const i=crd*r,c=Math.min(crd,m-i);I+=i;crd-=c;}const on=y<yrs;Y.push({I,ins:on?ins*12:0,pay:on?(m+ins)*12:0,crd:Math.max(0,crd)});}
+  return{Y,m:P>0?m+ins:0};}
+function simulate(kind,h){
+  const meuble=kind==="lmnp"||kind==="sciM",sci=kind.startsWith("sci");
+  const rent=meuble?h.loyer:h.loyerNu,mob=meuble?h.mob:0,frais=h.prix*0.092,cost=h.prix+frais+h.trav+mob;
+  const H=h.hz,S=sched(Math.max(0,cost-h.apport),h.taux,h.duree,H),t=h.tmi/100,ps=h.ps/100,vac=h.vac?11/12:1;
+  const compta=sci?1500:(kind==="lmnp"?600:0);
+  let cum=0,tax1=0,cf1=0,carry=0,ard=0,amUsed=0,amCum=0,profit=0,taxTot=0,micro=0,reel=0,regime="";
+  // Nu en propre : on calcule micro et réel, on retient le moins taxé sur 10 ans
+  const years=[];
+  for(let y=0;y<H;y++){
+    const L=rent*12*vac*Math.pow(1.01,y);
+    const C=h.tf*Math.pow(1.03,y)+h.charges*0.7*Math.pow(1.02,y)+130*Math.pow(1.02,y)+(meuble?100:0)+compta+(sci&&y===0?2000:0);
+    const Iy=S.Y[y].I+S.Y[y].ins,cfb=L-C-S.Y[y].pay;
+    const A=h.prix*0.85/30+(y<5?frais/5:0)+(y<10?h.trav/10:0)+(y<7?mob/7:0);
+    years.push({L,C,Iy,cfb,A});
+  }
+  if(kind==="nu"){
+    years.forEach(v=>{micro+=v.L<=15000?0.7*v.L*(t+ps):(v.L*0.7)*(t+ps);});
+    let c2=0;const rt=[];
+    years.forEach((v,y)=>{const H=v.C+(y===0&&!h.plateau?h.trav:0),net=v.L-v.Iy-H;let tx;
+      if(net>=0){const tb=Math.max(0,net-c2);c2=Math.max(0,c2-net);tx=tb*(t+ps);}
+      else{const g=Math.max(0,H-Math.max(0,v.L-v.Iy)),imp=Math.min(10700,g);tx=-imp*t;c2+=Math.max(0,v.Iy-v.L)+(g-imp);}
+      rt.push(tx);reel+=tx;});
+    const useReel=reel<micro||years[0].L>15000;regime=useReel?"réel foncier":"micro-foncier";
+    years.forEach((v,y)=>{const tx=useReel?rt[y]:0.7*v.L*(t+ps);if(y===0){tax1=tx;cf1=(v.cfb-tx)/12;}cum+=v.cfb-tx;taxTot+=tx;});
+  }else{
+    years.forEach((v,y)=>{let tx;
+      if(!sci){ // LMNP réel : l'amortissement ne crée pas de déficit, l'excédent est reporté
+        let R=v.L-v.C-v.Iy;
+        if(R<0){carry+=-R;R=0;}else{const u=Math.min(R,carry);R-=u;carry-=u;}
+        const av=v.A+ard,u2=Math.min(R,av);ard=av-u2;amUsed+=u2*(v.A?(v.A-(y<7?mob/7:0))/v.A:1);tx=(R-u2)*(t+ps);
+      }else{ // SCI à l'IS : amortissement complet, déficit reportable
+        const R=v.L-v.C-v.Iy-v.A;amCum+=v.A;let tb=0;
+        if(R<0)carry+=-R;else{tb=Math.max(0,R-carry);carry=Math.max(0,carry-R);}
+        tx=Math.min(tb,42500)*0.15+Math.max(0,tb-42500)*0.25;profit+=R-tx;
+      }
+      if(y===0){tax1=tx;cf1=(v.cfb-tx)/12;}cum+=v.cfb-tx;taxTot+=tx;});
+    regime=sci?"IS 15 %":"réel BIC";
+  }
+  // Revente à 10 ans
+  const sale=h.prix*Math.pow(1+h.reval/100,H),crd=S.Y[H-1].crd,aIR=H<6?0:H>=22?1:(H-5)*0.06,aPS=H<6?0:H>=30?1:H<=21?(H-5)*0.0165:16*0.0165+0.016+(H-22)*0.09;let taxPV=0,net;
+  if(!sci){const base=sale-(h.prix+Math.max(frais,h.prix*0.075)+Math.max(h.trav,h.prix*0.15))+(kind==="lmnp"?amUsed:0);
+    if(base>0)taxPV=base*(1-aIR)*0.19+base*(1-aPS)*h.ps/100;
+    net=cum+sale-crd-taxPV;}
+  else{const vnc=cost-Math.min(cost,amCum),pv=sale-vnc,tb=Math.max(0,pv-carry),isPV=Math.min(tb,42500)*0.15+Math.max(0,tb-42500)*0.25;
+    const cash=cum+sale-crd-isPV,distrib=profit+pv-isPV,pfu=Math.max(0,distrib)*0.314;taxPV=isPV+pfu;net=cash-pfu;}
+  return{m:S.m,tax1,cf1,cum,taxPV,enrich:net-h.apport,regime,taxTot};
+}
+function renderCmp(){
+  const prix=N("prix"),loyer=N("loyer");
+  if(!prix||!loyer){$("cmp").innerHTML='<p class="summary">Renseignez au moins le prix et le loyer.</p>';return;}
+  const h={prix,loyer,loyerNu:N("loyerNu")??Math.round(loyer*0.88),trav:N("travaux")||0,mob:N("mobilier")||0,tf:N("tf")??0,charges:N("charges")??0,
+    apport:N("apport")??25000,taux:N("taux")??3.55,duree:N("duree")??25,tmi:N("tmi")??11,ps:N("ps")??17.2,reval:N("reval")??1,hz:N("hz")??10,vac:V("vac")!=="Non",plateau:ctx.plateau};
+  const sc=[["lmnp","LMNP en propre","Meublé, régime réel"],["sciM","SCI à l'IS, meublé","Société, amortissement"],["nu","Nu en propre","Revenus fonciers"],["sciN","SCI à l'IS, nu","Société, amortissement"]];
+  const res=sc.map(([k,t,d])=>({k,t,d,...simulate(k,h)}));const best=Math.max(...res.map(r=>r.enrich));
+  const e=v=>(v>=0?"+":"")+fmt(v)+" €",cl=v=>v>=0?"pos":"neg";
+  $("cmp").innerHTML='<div class="cards">'+res.map(r=>`<div class="card${r.enrich===best?" best":""}"><h3>${r.t}${r.enrich===best?`<span class="tag">meilleur à ${h.hz} ans</span>`:""}</h3><p class="sub2">${r.d} · ${r.regime}</p><dl>
+    <dt>Mensualité</dt><dd>${fmt(r.m)} €</dd>
+    <dt>${r.k.startsWith("sci")?"IS":"Impôt"} année 1</dt><dd>${fmt(r.tax1)} €</dd>
+    <dt>Cash-flow an 1 après impôt</dt><dd class="${cl(r.cf1)}">${e(r.cf1)}/mois</dd>
+    <dt>Cash-flow cumulé ${h.hz} ans</dt><dd class="${cl(r.cum)}">${e(r.cum)}</dd>
+    <dt>Impôts revente${r.k.startsWith("sci")?" + sortie":""}</dt><dd>${fmt(r.taxPV)} €</dd>
+    <dt>Enrichissement net ${h.hz} ans</dt><dd class="${cl(r.enrich)}">${e(r.enrich)}</dd></dl></div>`).join("")+"</div>"+
+    `<p class="note">Projection simplifiée sur ${h.hz} ans : loyers +1 %/an, taxe foncière +3 %/an, charges +2 %/an, revente au prix d'achat revalorisé de ${String(h.reval).replace(".",",")} %/an. Loyer nu retenu : ${fmt(h.loyerNu)} €. LMNP : amortissements réintégrés dans la plus-value (loi de finances 2025). Nu en propre : déficit foncier imputable jusqu'à 10 700 €/an${h.plateau?", travaux de transformation non déductibles":""}. SCI à l'IS : 2 000 € de création, 1 500 €/an de comptabilité, trésorerie et bénéfices distribués en une fois à la sortie (PFU 31,4 %), plus-value professionnelle sans abattement. Plus-value en propre : abattements pour durée de détention (exonération d'IR à 22 ans, de prélèvements sociaux à 30 ans), surtaxe au-delà de 50 000 € non comptée. Enrichissement = cash-flows cumulés + produit de revente net de crédit et d'impôts − apport. La SCI alourdit aussi le dossier bancaire.</p>`;
+}
+
+function visible(){return ITEMS.filter(it=>!it.c||it.c(ctx));}
+
+const openG=new Set();
+function renderList(){
+  const items=visible(),groups={};let miss=0;
+  items.forEach(it=>{const fd=ctx.found[it.id];if(!(it.id in state))state[it.id]=!fd;if(!fd)miss++;(groups[it.g]=groups[it.g]||[]).push(it);});
+  let h="";
+  Object.entries(groups).forEach(([g,its])=>{
+    const m=its.filter(it=>!ctx.found[it.id]).length,ask=its.filter(it=>state[it.id]).length;
+    h+=`<details class="cat" data-g="${g}"${openG.has(g)?" open":""}><summary><span class="cn">${g}</span><span class="cc${m?"":" ok"}">${m?m+" manquant"+(m>1?"s":""):"complet"} · ${ask} à demander</span></summary>`;
+    its.forEach(it=>{const fd=ctx.found[it.id],sn=fd&&ctx.t&&it.r.test(ctx.t)?snippet(ctx.t,it.r):"";
+      h+=`<label class="item${fd?" found":""}"><input type="checkbox" data-id="${it.id}"${state[it.id]?" checked":""}><span class="t">${it.l}<span class="badge">${fd?"renseigné":"manquant"}</span>${sn?`<span class="snip">${sn.replace(/</g,"&lt;")}</span>`:""}</span></label>`;});
+    h+="</details>";
+  });
+  $("list").innerHTML=h;
+  $("sum").textContent=`${miss} point${miss>1?"s":""} manquant${miss>1?"s":""} sur ${items.length}. Les cases cochées seront demandées dans le message.`;
+  $("list").querySelectorAll("details").forEach(d=>d.addEventListener("toggle",()=>{d.open?openG.add(d.dataset.g):openG.delete(d.dataset.g);}));
+  $("list").querySelectorAll("input").forEach(cb=>cb.addEventListener("change",e=>{state[e.target.dataset.id]=e.target.checked;renderList();build();save();}));
+}
+
+function val(n){return document.querySelector(`input[name="${n}"]:checked`).value;}
+
+function build(){
+  const mail=val("chan")==="mail",agence=val("seller")==="agence";
+  const qs=visible().filter(it=>state[it.id]);
+  const docs=[...new Set(visible().map(it=>it.d).filter(Boolean))];
+  const desc=[V("type")==="Plateau"?"plateau":V("type").toLowerCase(),V("surf")?V("surf")+" m²":"",V("ville")?"à "+V("ville"):""].filter(Boolean).join(" ");
+  let m=mail&&agence?"Madame, Monsieur,\n\n":"Bonjour,\n\n";
+  m+=`Votre annonce${desc?" ("+desc+")":""}${V("ref")?" réf. "+V("ref"):""} m'intéresse. Je prépare un projet d'investissement locatif avec mon financement, et je souhaiterais quelques précisions avant de visiter`;
+  m+=qs.length?" :\n\n"+qs.map((it,i)=>`${i+1}. ${it.q}`).join("\n"):".";
+  if(mail&&docs.length)m+="\n\nPourriez-vous également me transmettre, si possible :\n"+docs.map(d=>"- "+d).join("\n");
+  m+=mail?"\n\nJe suis disponible rapidement pour une visite.\n\nCordialement,\n":"\n\nMerci d'avance, je suis disponible rapidement pour une visite.\n";
+  m+=V("sign");
+  $("msg").value=m;
+}
+
+function toast(s){const t=$("toast");t.textContent=s;t.classList.add("on");clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove("on"),1800);}
+async function copy(){try{await navigator.clipboard.writeText($("msg").value);toast("Message copié");}catch(e){$("msg").select();document.execCommand("copy");toast("Message copié");}}
+async function share(){const text=$("msg").value;if(navigator.share){try{await navigator.share({text});}catch(e){}}else if(val("chan")==="mail"){location.href="mailto:?subject="+encodeURIComponent("Votre annonce"+(V("ref")?" réf. "+V("ref"):""))+"&body="+encodeURIComponent(text);}else copy();}
+
+function save(){try{const o={ad:$("ad").value,sign:V("sign"),seller:val("seller"),chan:val("chan"),state};FIELDS.forEach(f=>o[f]=$(f).value);CHECKS.forEach(c=>o[c]=$(c).checked);localStorage.setItem("ck-annonce-v2",JSON.stringify(o));}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem("ck-annonce-v2")||"null");if(!s)return;$("ad").value=s.ad||"";if(s.sign)$("sign").value=s.sign;
+  FIELDS.forEach(f=>{if(s[f]!==undefined)$(f).value=s[f];});CHECKS.forEach(c=>$(c).checked=!!s[c]);
+  ["seller","chan"].forEach(n=>{const r=document.querySelector(`input[name="${n}"][value="${s[n]}"]`);if(r)r.checked=true;});}catch(e){}}
+function reset(){if(!confirm("Effacer l'annonce et les caractéristiques ? Votre financement est conservé."))return;
+  $("ad").value="";FIELDS.filter(f=>!PROFILE.includes(f)).forEach(f=>$(f).value="");CHECKS.forEach(c=>$(c).checked=false);state={};ctx={};refresh();window.scrollTo(0,0);}
+
+$("copy").addEventListener("click",copy);
+$("share").addEventListener("click",share);
+$("new").addEventListener("click",reset);
+document.querySelectorAll("main input:not(#ad):not([data-id]),main select").forEach(el=>el.addEventListener(el.type==="checkbox"||el.tagName==="SELECT"||el.type==="radio"?"change":"input",refresh));
+$("ad").addEventListener("paste",()=>setTimeout(()=>prefill(false),0));
+$("ad").addEventListener("input",e=>{if(e.inputType==="insertFromPaste")return;clearTimeout(refresh.h);refresh.h=setTimeout(()=>prefill(true),500);});
+
+// Lecture des captures (OCR local avec Tesseract.js, chargé à la demande)
+function loadTess(){return window.Tesseract?Promise.resolve():new Promise((ok,ko)=>{const sc=document.createElement("script");sc.src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js";sc.onload=ok;sc.onerror=()=>ko(new Error("chargement"));document.head.appendChild(sc);});}
+async function readImages(files){
+  if(!files.length)return;const st=$("ocr"),lab=document.querySelector(".upl");lab.style.opacity=.5;
+  try{
+    st.textContent="Chargement du module de lecture…";await loadTess();
+    let cur=0;const worker=await Tesseract.createWorker("fra",1,{logger:m=>{if(m.status==="recognizing text")st.textContent=`Lecture de la capture ${cur+1}/${files.length} : ${Math.round(m.progress*100)} %`;}});
+    const texts=[];
+    for(cur=0;cur<files.length;cur++){const r=await worker.recognize(files[cur]);texts.push(r.data.text);}
+    await worker.terminate();
+    const ad=$("ad");ad.value=(ad.value.trim()?ad.value.trim()+"\n\n":"")+texts.join("\n\n").trim();
+    st.textContent=`${files.length} capture${files.length>1?"s":""} lue${files.length>1?"s":""}. Vérifiez le texte et les caractéristiques.`;
+    prefill(false);
+  }catch(e){st.textContent="Lecture impossible ("+(e.message||"erreur")+"). Vérifiez la connexion, ou copiez-collez le texte.";}
+  finally{lab.style.opacity=1;$("img").value="";}
+}
+$("img").addEventListener("change",e=>readImages([...e.target.files]));
+function tab(t){["q","a"].forEach(k=>{$("tab-"+k).classList.toggle("hide",k!==t);$("t-"+k).setAttribute("aria-selected",k===t);});window.scrollTo(0,0);}
+document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>tab(b.dataset.tab)));
+load();refresh();
+if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+})();
+</script>
+</body>
+</html>
